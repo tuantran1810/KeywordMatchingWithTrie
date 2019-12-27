@@ -1,6 +1,9 @@
 #include "trie.h"
 #include "utils.h"
 
+/******************************************
+*                 Trie Node               *
+******************************************/
 std::shared_ptr<TrieNode>
 TrieNode::Import(const std::string& word, bool stopWord) {
     auto iter = this->find(word);
@@ -20,10 +23,10 @@ std::shared_ptr<TrieNode>
 TrieNode::MatchWord(const std::string& word) {
     auto iter = this->find(word);
     if (iter == this->end()) {
-//      std::cout << "MatchWord: " << word  << " at node " << this->name << " not found" << std::endl;
+     // std::cout << "MatchWord: " << word  << " at node " << this->name << " not found" << std::endl;
         return nullptr;
     }
-//  std::cout << "MatchWord: " << word << " at node " << this->name <<  " found!!!!!!!!" << std::endl;
+ // std::cout << "MatchWord: " << word << " at node " << this->name <<  " found!!!!!!!!" << std::endl;
     return iter->second;
 }
 
@@ -31,6 +34,44 @@ bool
 TrieNode::CanStop() {
     return canStop;
 }
+
+/******************************************
+*                Trie State               *
+******************************************/
+
+void
+TrieState::Reset() {
+    node = root;
+    buffer.clear();
+    completeWordBehind = false;
+    canBeReturned = "";
+    lastIndex = 0;
+}
+
+void
+TrieState::Update(const std::string& word, std::shared_ptr<TrieNode> node) {
+    if (node == nullptr) {
+        std::cout << "input node == nullptr" << std::endl;
+        return;
+    }
+    this->node = node;
+    buffer.push_back(word);
+    if (node->CanStop()) {
+        completeWordBehind = true;
+        canBeReturned = StringJoiner::GetInstance()(buffer);
+        lastIndex = buffer.size();
+    }
+}
+
+bool
+TrieState::Conclude(std::string& output) const {
+    output = canBeReturned;
+    return completeWordBehind;
+}
+
+/******************************************
+*                  Trie                   *
+******************************************/
 
 void
 TrieOfWords::Import(const std::string& str) {
@@ -53,48 +94,45 @@ TrieOfWords::Import(const std::string& str) {
 
 void
 TrieOfWords::MatchString(const std::string& str, StringMatchedCallback callback) const {
-    auto node = root;
-    std::vector<std::string> buffer;
+    state->Reset();
     StringSplitter::GetInstance().Generate(str, [&](const std::string& word) {
-        __matchWord(word, node, buffer, callback);
+        __matchWord(word, callback);
     });
-    if (node != root && node != nullptr && node->CanStop() && buffer.size() > 0) {
-        callback(StringJoiner::GetInstance()(buffer));
+    if (state->node != root && state->node != nullptr && state->node->CanStop() && state->buffer.size() > 0) {
+        callback(StringJoiner::GetInstance()(state->buffer));
     }
 }
 
 void
-TrieOfWords::__matchWord(const std::string& word, std::shared_ptr<TrieNode>& node, std::vector<std::string>& buffer, StringMatchedCallback callback) const {
-    if (node == nullptr) {
+TrieOfWords::__matchWord(const std::string& word, StringMatchedCallback callback) const {
+    if (state->node == nullptr) {
         std::cout << "node nullptr!!!" << std::endl;
         return;
     }
-    auto tmp = node->MatchWord(word);
+    auto tmp = state->node->MatchWord(word);
     if (tmp != nullptr) {
-        node = tmp;
-        buffer.push_back(word);
+        state->Update(word, tmp);
     } else {
-        if (buffer.size() > 0) {
-            if (node->CanStop()) {
-                callback(StringJoiner::GetInstance()(buffer));
-                __resetState(node, buffer);
-                __matchWord(word, node, buffer, callback);
+        if (state->buffer.size() > 0) {
+            if (state->node->CanStop()) {
+                callback(StringJoiner::GetInstance()(state->buffer));
+                state->Reset();
+                __matchWord(word, callback);
             } else {
-                buffer.push_back(word);
                 std::vector<std::string> tmpvec;
-                tmpvec.swap(buffer);
-                node = root;
-                for (int i = 1; i < tmpvec.size(); i++) __matchWord(tmpvec[i], node, buffer, callback);
+                tmpvec.swap(state->buffer);
+                tmpvec.push_back(word);
+                std::string tmp;
+                int lastIndex = 1;
+                if (state->Conclude(tmp)) {
+                    lastIndex = state->lastIndex;
+                    callback(std::move(tmp));
+                }
+                state->Reset();
+                for (int i = lastIndex; i < tmpvec.size(); i++) __matchWord(tmpvec[i], callback);
             }
-        } else __resetState(node, buffer);
+        } else state->Reset();
     }
-
-}
-
-void
-TrieOfWords::__resetState(std::shared_ptr<TrieNode>& node, std::vector<std::string>& buffer) const {
-    node = root;
-    buffer.clear();
 }
 
 std::shared_ptr<TrieNode>
