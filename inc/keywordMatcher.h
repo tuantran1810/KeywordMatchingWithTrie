@@ -5,8 +5,8 @@
 #include "utils.h"
 
 struct KeywordMatcher {
-	KeywordMatcher(std::string filename);
-	void FindKeywords(const std::string& str) const;
+    KeywordMatcher(std::string filename);
+    void FindKeywords(const std::string& str) const;
 private:
-	TrieOfWords trie;
+    TrieOfWords trie;
 };

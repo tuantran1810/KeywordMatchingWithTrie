@@ -8,28 +8,28 @@
 #include <functional>
 
 struct StringSplitter {
-	typedef std::function<void(const std::string&)> DataTransferCallback;
-	static StringSplitter& GetInstance();
-	int operator()(const std::string& str, std::vector<std::string>& results, char delimiter = ' ') const;
-	void Generate(const std::string& str, DataTransferCallback callback, char delimiter = ' ');
+    typedef std::function<void(const std::string&)> DataTransferCallback;
+    static StringSplitter& GetInstance();
+    int operator()(const std::string& str, std::vector<std::string>& results, char delimiter = ' ') const;
+    void Generate(const std::string& str, DataTransferCallback callback, char delimiter = ' ');
 private:
-	static StringSplitter* instance;
+    static StringSplitter* instance;
 };
 
 struct StringJoiner {
-	static StringJoiner& GetInstance();
-	std::string operator()(const std::vector<std::string>& vstr, char delimiter = ' ') const;
+    static StringJoiner& GetInstance();
+    std::string operator()(const std::vector<std::string>& vstr, char delimiter = ' ') const;
 private:
-	static StringJoiner* instance;
+    static StringJoiner* instance;
 };
 
 struct DataLoader {
-	typedef std::function<void(const std::string&)> DataTransferCallback;
-	static DataLoader& GetInstance();
-	bool operator()(std::string filename);
-	void AcquireDataLineByLine(DataTransferCallback callback) const;
-	void AcquireDataAll(DataTransferCallback callback) const;
+    typedef std::function<void(const std::string&)> DataTransferCallback;
+    static DataLoader& GetInstance();
+    bool operator()(std::string filename);
+    void AcquireDataLineByLine(DataTransferCallback callback) const;
+    void AcquireDataAll(DataTransferCallback callback) const;
 private:
-	static DataLoader* instance;
-	std::vector<std::string> buffer;
+    static DataLoader* instance;
+    std::vector<std::string> buffer;
 };
